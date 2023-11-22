@@ -20,16 +20,19 @@
 #include <ctime>
 #include <sstream>
 
+// Provide environment variables used in the WIFI and FIREBASE connection.
+#include "config.h"
+
 // Provide the RTDB payload printing info and other helper functions.
 #include <addons/RTDBHelper.h>
 
 /* 1. Define the WiFi credentials */
-#define WIFI_SSID "AP602-V2G"
-#define WIFI_PASSWORD "mKu8fy5p"
+#define WIFI_SSID SSID
+#define WIFI_PASSWORD PASSWORD
 
 /* 2. If work with RTDB, define the RTDB URL and database secret */
-#define DATABASE_URL "https://alarm-esp32-default-rtdb.firebaseio.com/" //<databaseName>.firebaseio.com or <databaseName>.<region>.firebasedatabase.app
-#define DATABASE_SECRET "BqimfdBYyYFa63e8pY7nJCD7hmbGWHdmbeMomXQO"
+#define DATABASE_URL URL //<databaseName>.firebaseio.com or <databaseName>.<region>.firebasedatabase.app
+#define DATABASE_SECRET SECRET
 
 /* Define ports */
 #define BIP_PIN 14

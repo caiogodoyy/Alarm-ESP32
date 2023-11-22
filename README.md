@@ -18,9 +18,17 @@ College project that implements a proximity-based alarm system using an ESP32 Wr
 
 1. Clone the repository.
 2. Set up your Arduino IDE with the necessary libraries (FirebaseESP32, etc.).
-3. Configure Wi-Fi and Firebase credentials in the code.
-4. Upload the code to your ESP32 Wroom.
-5. Monitor the serial output for debugging and status information.
+3. Create a file named config.h in the /src directory with the following content:
+```c
+#define SSID "`your_wifi_ssid`"
+#define PASSWORD "`your_wifi_password`"
+
+#define URL "`your_firebase_url`"
+#define SECRET "`your_firebase_secret`"
+```
+4. Configure Wi-Fi and Firebase credentials in the code.
+5. Upload the code to your ESP32 Wroom.
+6. Monitor the serial output for debugging and status information.
 
 ## Configuration
 
