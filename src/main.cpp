@@ -24,21 +24,21 @@
 #include <addons/RTDBHelper.h>
 
 /* 1. Define the WiFi credentials */
-#define WIFI_SSID "WIFI_AP"
-#define WIFI_PASSWORD "WIFI_PASSWORD"
+#define WIFI_SSID "AP602-V2G"
+#define WIFI_PASSWORD "mKu8fy5p"
 
 /* 2. If work with RTDB, define the RTDB URL and database secret */
-#define DATABASE_URL "URL" //<databaseName>.firebaseio.com or <databaseName>.<region>.firebasedatabase.app
-#define DATABASE_SECRET "DATABASE_SECRET"
+#define DATABASE_URL "https://alarm-esp32-default-rtdb.firebaseio.com/" //<databaseName>.firebaseio.com or <databaseName>.<region>.firebasedatabase.app
+#define DATABASE_SECRET "BqimfdBYyYFa63e8pY7nJCD7hmbGWHdmbeMomXQO"
 
 /* Define ports */
 #define BIP_PIN 14
-#define LED_RED_PIN 2
-#define LED_YELLOW_PIN 4
-#define ECHO_PIN 18
+#define LED_RED_PIN 26
+#define LED_YELLOW_PIN 25
+#define ECHO_PIN 32
+#define TRIGGER_PIN 35
 
 #define SOUND_SPEED 0.034
-#define CM_TO_INCH 0.393701
 #define TIME_ZONE -3
 
 /* 3. Define the Firebase Data object */
@@ -62,6 +62,7 @@ void setup()
     pinMode(LED_RED_PIN, OUTPUT);
     pinMode(LED_YELLOW_PIN, OUTPUT);
     pinMode(BIP_PIN, OUTPUT);
+    pinMode(TRIGGER_PIN, OUTPUT);
     pinMode(ECHO_PIN, INPUT);
 
     Serial.begin(115200);
@@ -106,6 +107,12 @@ void loop()
 {
     Serial.println("Alarm OFF");
     getCurrentTime();
+
+    digitalWrite(TRIGGER_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIGGER_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIGGER_PIN, LOW);
 
     duration = pulseIn(ECHO_PIN, HIGH);
     distance = duration * SOUND_SPEED / 2;
