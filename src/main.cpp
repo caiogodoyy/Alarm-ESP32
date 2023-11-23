@@ -58,6 +58,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", TIME_ZONE * 3600, 60000);
 
 void activateAlarm();
+void deactivateAlarm();
 String getCurrentDate();
 void getDistance();
 
@@ -141,6 +142,7 @@ void loop()
         activateAlarm();
     }
 
+    deactivateAlarm();
     delay(500);
 }
 
@@ -156,6 +158,12 @@ void activateAlarm()
     digitalWrite(LED_RED_PIN, false);
     digitalWrite(LED_YELLOW_PIN, true);
     delay(500);
+}
+
+void deactivateAlarm()
+{
+    digitalWrite(LED_RED_PIN, false);
+    digitalWrite(LED_YELLOW_PIN, false);
 }
 
 String getCurrentDate()
