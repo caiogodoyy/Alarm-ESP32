@@ -135,12 +135,10 @@ void loop()
     while (Firebase.get(fbdo, "/alarm/state/") && fbdo.boolData() == true)
     {
         Serial.println("Alarm [ON]");
-        Serial.println(currentDate);
-        Serial.printf("Set state... %s\n", Firebase.setBool(fbdo, "/alarm/state", true) ? "ok" : fbdo.errorReason().c_str());
-        Serial.printf("Set last time activated... %s\n", Firebase.setString(fbdo, "/alarm/lastTimeActivated/", currentDate) ? "ok" : fbdo.errorReason().c_str());
+        Firebase.get(fbdo, "/alarm/lastTimeActivated/");
+        Serial.println(fbdo.boolData());
 
         activateAlarm();
-        getDistance();
     }
 
     delay(500);
