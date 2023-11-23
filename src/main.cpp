@@ -35,11 +35,11 @@
 #define DATABASE_SECRET SECRET
 
 /* Define ports */
-#define BIP_PIN 14
 #define LED_RED_PIN 26
 #define LED_YELLOW_PIN 25
 #define ECHO_PIN 32
 #define TRIGGER_PIN 35
+#define POT_PIN 14
 
 #define SOUND_SPEED 0.034
 #define TIME_ZONE -3
@@ -64,8 +64,8 @@ void setup()
     /* Mapping Ports */
     pinMode(LED_RED_PIN, OUTPUT);
     pinMode(LED_YELLOW_PIN, OUTPUT);
-    pinMode(BIP_PIN, OUTPUT);
     pinMode(TRIGGER_PIN, OUTPUT);
+    pinMode(POT_PIN, INPUT);
     pinMode(ECHO_PIN, INPUT);
 
     Serial.begin(115200);
@@ -121,7 +121,7 @@ void loop()
     distance = duration * SOUND_SPEED / 2;
     Serial.printf("Distance = %fcm", distance);
 
-    while (distance < 2.00 && distance != 0)
+    while (distance < 2.00 && distance != 0 || (Firebase.get(fbdo, "/alarm/state/") && fbdo.boolData() == true))
     {
         Serial.println("Alarm ON");
         Serial.printf("Set state... %s\n", Firebase.setBool(fbdo, "/alarm/state", true) ? "ok" : fbdo.errorReason().c_str());
@@ -137,6 +137,10 @@ void loop()
 
 void activateAlarm()
 {
+    float intensity = map(analogRead(POT_PIN), 0, 1023, 0, 255);
+    analogWrite(LED_RED_PIN, intensity);
+    analogWrite(LED_YELLOW_PIN, intensity);
+
     digitalWrite(LED_RED_PIN, true);
     digitalWrite(LED_YELLOW_PIN, false);
     delay(500);
