@@ -17,8 +17,8 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <FirebaseESP32.h>
-#include <ctime>
-#include <sstream>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 // Provide environment variables used in the WIFI and FIREBASE connection.
 #include "config.h"
@@ -35,11 +35,10 @@
 #define DATABASE_SECRET SECRET
 
 /* Define ports */
-#define LED_RED_PIN 26
-#define LED_YELLOW_PIN 25
-#define ECHO_PIN 32
-#define TRIGGER_PIN 35
-#define POT_PIN 14
+#define LED_RED_PIN 5
+#define LED_YELLOW_PIN 18
+#define ECHO_PIN 2
+#define TRIG_PIN 4
 
 #define SOUND_SPEED 0.034
 #define TIME_ZONE -3
@@ -55,17 +54,20 @@ FirebaseConfig config;
 
 long duration;
 float distance;
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", TIME_ZONE * 3600, 60000);
 
 void activateAlarm();
-std::string getCurrentTime();
+String getCurrentDate();
+void getDistance();
 
 void setup()
 {
     /* Mapping Ports */
     pinMode(LED_RED_PIN, OUTPUT);
     pinMode(LED_YELLOW_PIN, OUTPUT);
-    pinMode(TRIGGER_PIN, OUTPUT);
-    pinMode(POT_PIN, INPUT);
+    pinMode(TRIG_PIN, OUTPUT);
+    //pinMode(POT_PIN, INPUT);
     pinMode(ECHO_PIN, INPUT);
 
     Serial.begin(115200);
@@ -104,42 +106,51 @@ void setup()
 
     // Or use legacy authenticate method
     // Firebase.begin(DATABASE_URL, DATABASE_SECRET);
+
+    // Initializing NTP client
+    timeClient.begin();
+    timeClient.update();
 }
 
 void loop()
 {
-    Serial.println("Alarm OFF");
-    getCurrentTime();
+    String currentDate = getCurrentDate();
+    Serial.println("Alarm [OFF]");
+    getDistance();
 
-    digitalWrite(TRIGGER_PIN, LOW);
-    delayMicroseconds(2);
-    digitalWrite(TRIGGER_PIN, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(TRIGGER_PIN, LOW);
-
-    duration = pulseIn(ECHO_PIN, HIGH);
-    distance = duration * SOUND_SPEED / 2;
-    Serial.printf("Distance = %fcm", distance);
-
-    while (distance < 2.00 && distance != 0 || (Firebase.get(fbdo, "/alarm/state/") && fbdo.boolData() == true))
+    while (distance < 5.00 && distance != 0)
     {
-        Serial.println("Alarm ON");
+        Serial.println("Alarm [ON]");
+        Serial.println(currentDate);
         Serial.printf("Set state... %s\n", Firebase.setBool(fbdo, "/alarm/state", true) ? "ok" : fbdo.errorReason().c_str());
-        Serial.printf("Set last time activated... %s\n", Firebase.setString(fbdo, "/alarm/lastTimeActivated/", getCurrentTime()) ? "ok" : fbdo.errorReason().c_str());
+        Serial.printf("Set last time activated... %s\n", Firebase.setString(fbdo, "/alarm/lastTimeActivated/", currentDate) ? "ok" : fbdo.errorReason().c_str());
 
         activateAlarm();
+        getDistance();
+
+        if (distance > 5.00)
+            Serial.printf("Set state... %s\n", Firebase.setBool(fbdo, "/alarm/state", false) ? "ok" : fbdo.errorReason().c_str());
     }
 
-    Serial.printf("Set state... %s\n", Firebase.setBool(fbdo, "/alarm/state", false) ? "ok" : fbdo.errorReason().c_str());
+    while (Firebase.get(fbdo, "/alarm/state/") && fbdo.boolData() == true)
+    {
+        Serial.println("Alarm [ON]");
+        Serial.println(currentDate);
+        Serial.printf("Set state... %s\n", Firebase.setBool(fbdo, "/alarm/state", true) ? "ok" : fbdo.errorReason().c_str());
+        Serial.printf("Set last time activated... %s\n", Firebase.setString(fbdo, "/alarm/lastTimeActivated/", currentDate) ? "ok" : fbdo.errorReason().c_str());
 
-    delay(1000);
+        activateAlarm();
+        getDistance();
+    }
+
+    delay(500);
 }
 
 void activateAlarm()
 {
-    float intensity = map(analogRead(POT_PIN), 0, 1023, 0, 255);
-    analogWrite(LED_RED_PIN, intensity);
-    analogWrite(LED_YELLOW_PIN, intensity);
+    //float intensity = map(analogRead(POT_PIN), 0, 1023, 0, 255);
+    //analogWrite(LED_RED_PIN, intensity);
+    //analogWrite(LED_YELLOW_PIN, intensity);
 
     digitalWrite(LED_RED_PIN, true);
     digitalWrite(LED_YELLOW_PIN, false);
@@ -149,18 +160,27 @@ void activateAlarm()
     delay(500);
 }
 
-std::string getCurrentTime()
+String getCurrentDate()
 {
-    std::time_t currentTime = std::time(nullptr);
-    std::tm* tmStruct = std::localtime(&currentTime);
+    timeClient.update();
+    time_t rawTime = timeClient.getEpochTime();
+    struct tm *timeInfo = localtime(&rawTime);
 
-    std::stringstream ss;
-    ss << (tmStruct->tm_year + 1900) << '-'
-       << (tmStruct->tm_mon + 1) << '-'
-       << tmStruct->tm_mday << ' '
-       << tmStruct->tm_hour << ':'
-       << tmStruct->tm_min << ':'
-       << tmStruct->tm_sec;
+    char buffer[20];
+    sprintf(buffer, "%04d-%02d-%02d %s", timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday, timeClient.getFormattedTime().c_str());
 
-    return ss.str();
+    return String(buffer);
+}
+
+void getDistance()
+{
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+
+    duration = pulseIn(ECHO_PIN, HIGH);
+    distance = duration * SOUND_SPEED / 2;
+    Serial.printf("Distance = %fcm\n", distance);
 }
